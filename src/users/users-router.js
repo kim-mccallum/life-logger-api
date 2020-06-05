@@ -22,6 +22,7 @@ usersRouter.route("/").get((req, res, next) => {
 
 // CREATE THE STUBS FOR THESE ENDPOINTS - SIGN UP AND LOGIN
 usersRouter.route("sign-up").post((req, res, next) => {
+  // NOT DONE!!
   Users.Service.createUser(req.app.get("db"))
     .then((user) => {
       res.json(serializeUser(user));
