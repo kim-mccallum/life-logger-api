@@ -3,7 +3,7 @@ CREATE TABLE entries (
     user_id INTEGER REFERENCES users(id),
     date TIMESTAMPTZ DEFAULT now() NOT NULL, 
     target_value NUMERIC NOT NULL, 
-    target_id INTEGER REFERENCES journal_settings(id),
+    journal_id INTEGER REFERENCES journal_settings(id),
     habit_1 INTEGER NOT NULL,
     habit_2 INTEGER,
     habit_3 INTEGER

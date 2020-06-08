@@ -11,10 +11,11 @@ const UsersService = {
         return rows[0];
       });
   },
+  // PUT THIS IN THE AUTH READ THE JWT AUTH STUFF BACKWARDS
   userLogin(knex) {
     return;
   },
-  // Maybe need these too
+  // Maybe need these too - version 2 for admins
   getById(knex, id) {
     return knex.from("users").select("*").where("id", id).first();
   },
