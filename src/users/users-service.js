@@ -12,8 +12,8 @@ const UsersService = {
       });
   },
   // PUT THIS IN THE AUTH READ THE JWT AUTH STUFF BACKWARDS
-  userLogin(knex) {
-    return;
+  userLogin(knex, username) {
+    return knex.select("*").from("users").where("username", username);
   },
   // Maybe need these too - version 2 for admins
   getById(knex, id) {

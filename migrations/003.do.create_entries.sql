@@ -4,7 +4,7 @@ CREATE TABLE entries (
     date TIMESTAMPTZ DEFAULT now() NOT NULL, 
     target_value NUMERIC NOT NULL, 
     journal_id INTEGER REFERENCES journal_settings(id),
-    habit_1 INTEGER NOT NULL,
-    habit_2 INTEGER,
-    habit_3 INTEGER
+    habit_1_val INTEGER NOT NULL,
+    habit_2_val INTEGER,
+    habit_3_val INTEGER
 );

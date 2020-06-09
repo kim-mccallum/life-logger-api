@@ -41,12 +41,35 @@ usersRouter.route("/sign-up").post((req, res, next) => {
 
 // FINISH THESE LATER
 usersRouter.route("/login").post((req, res, next) => {
-  res.status(200).json("Someone wants to login");
-  // UsersService.userLogin(req.app.get("db"))
-  //   .then((user) => {
-  //     res.status(200).json(serializeUser(user));
-  //   })
-  //   .catch(next);
+  let { username, password } = req.body;
+  let pwd = password;
+  let loadedUser;
+  UsersService.userLogin(req.app.get("db"), username)
+    .then((user) => {
+      console.log(user);
+      let { username, password, id } = user[0];
+      console.log(password, pwd);
+      loadedUser = { username, id };
+      // compare the request pw to db pw - this is a promise
+      // compare user to stored - order matters
+      return bcrypt.compare(pwd, password);
+    })
+    .then((isValid) => {
+      if (!isValid) {
+        throw new Error("password is not valid");
+      }
+      // build the token
+      const token = jwt.sign(
+        {
+          username: loadedUser.username,
+          id: loadedUser.id,
+          // eventually move this random string into env variables
+        },
+        "alskdjflaskdjalskdfjlksjdflskawivnzp"
+      );
+      res.status(200).json({ token, username, id: loadedUser.id });
+    })
+    .catch(next);
 });
 
 module.exports = usersRouter;

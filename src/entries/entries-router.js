@@ -18,15 +18,28 @@ const serializeEntry = (entry) => ({
 });
 
 entriesRouter.route("/").get((req, res, next) => {
-  EntriesService.getAllEntries(req.app.get("db"))
-    .then((entries) => {
-      res.json(entries);
-    })
-    // should this be next or something else?
-    .catch(next);
+  console.log("Look in request body:", req.body);
+  let { user_id } = req.body;
+  //   Get entries by user_id
+  if (user_id) {
+    console.log(user_id);
+    EntriesService.getByUserId(req.app.get("db"), user_id)
+      .then((entries) => {
+        res.json(entries);
+      })
+      // should this be next or something else?
+      .catch(next);
+  }
+  //   EntriesService.getAllEntries(req.app.get("db"))
+  //     .then((entries) => {
+  //       res.json(entries);
+  //     })
+  //     // should this be next or something else?
+  //     .catch(next);
 });
 
-//by id
+// // Stuff below is not being used/working
+//by id? As a parameter or in the body???
 entriesRouter
   .route(`/:user_id`)
   .all((req, res, next) => {

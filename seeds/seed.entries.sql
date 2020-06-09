@@ -1,4 +1,4 @@
-INSERT INTO entries (user_id, date, target_value, journal_id, habit_1, habit_2, habit_3)
+INSERT INTO entries (user_id, date, target_value, journal_id, habit_1_val, habit_2_val, habit_3_val)
 VALUES 
 ('2','May 15 04:05:06 2020 MST','44','5', '1','0', NULL),
 
