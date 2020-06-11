@@ -25,17 +25,17 @@ entriesRouter.route("/").get((req, res, next) => {
     console.log(user_id);
     EntriesService.getByUserId(req.app.get("db"), user_id)
       .then((entries) => {
-        res.json(entries);
+        res.status(200).json(entries);
       })
       // should this be next or something else?
       .catch(next);
   }
-  //   EntriesService.getAllEntries(req.app.get("db"))
-  //     .then((entries) => {
-  //       res.json(entries);
-  //     })
-  //     // should this be next or something else?
-  //     .catch(next);
+  EntriesService.getAllEntries(req.app.get("db"))
+    .then((entries) => {
+      res.status(200).json(entries);
+    })
+    // should this be next or something else?
+    .catch(next);
 });
 
 // // Stuff below is not being used/working

@@ -2,10 +2,12 @@ const path = require("path");
 const express = require("express");
 const xss = require("xss");
 const JournalSettingsService = require("./journal-settings-service");
+const auth = require("../middleware/auth");
 
 const journalSettingsRouter = express.Router();
 const jsonParser = express.json();
 
+// need help sanitizing
 const serializeJournal = (journal) => ({
   user_id: journal.user_id,
   target_value: xss(journal.target_value),
@@ -17,14 +19,73 @@ const serializeJournal = (journal) => ({
   habit_3: xss(journal.habit_3),
 });
 
-journalSettingsRouter.route("/").get((req, res, next) => {
-  JournalSettingsService.getAllSettings(req.app.get("db"))
-    .then((settings) => {
-      res.json(settings);
-    })
-    // should this be next or something else?
-    .catch(next);
-});
+journalSettingsRouter
+  .route("/")
+
+  .get((req, res, next) => {
+    JournalSettingsService.getAllSettings(req.app.get("db"))
+      .then((settings) => {
+        res.json(settings);
+      })
+      // if there is an error, pass this
+      .catch(next);
+  })
+  // .post(auth, (req, res, next) => {
+  // CAN YOU HAVE TWO MIDDLEWARES? WE MIGHT NEED BODYPARSER AND AUTH?
+  .post(jsonParser, (req, res, next) => {
+    console.log(req);
+    // destructure body?
+    const {
+      // GET THE USER_ID FROM MIDDLEWARE?
+      user_id,
+      target_name,
+      units,
+      type,
+      description,
+      habit_1,
+      habit_2,
+      habit_3,
+    } = req.body;
+
+    // validate - all required fields included?
+    for (const field of [
+      "user_id",
+      "target_name",
+      "units",
+      "type",
+      "description",
+      "habit_1",
+    ]) {
+      if (!req.body[field]) {
+        return res.status(400).send({
+          error: { message: `'${field}' is required.` },
+        });
+      }
+    }
+    // are fields the correct type? - ADD THIS LATER
+
+    // put values into newSetting object
+    const newSetting = {
+      user_id,
+      target_name,
+      units,
+      type,
+      description,
+      habit_1,
+      habit_2,
+      habit_3,
+    };
+
+    JournalSettingsService.createSetting(req.app.get("db"), newSetting)
+      .then((setting) => {
+        res
+          .status(201)
+          .location(`/journal-settings/${setting.user_id}`)
+          // add the serialize function here to sanitize!?
+          .json(setting);
+      })
+      .catch(next);
+  });
 
 //by id
 journalSettingsRouter
@@ -54,6 +115,7 @@ journalSettingsRouter
       habit_3: xss(res.user.habit_3), //sanitize
     });
   })
+  // develop this later and PATCH too
   .delete((req, res, next) => {
     JournalSettingsService.deleteSetting(req.app.get("db"), req.params.id)
       .then(() => {
@@ -61,26 +123,5 @@ journalSettingsRouter
       })
       .catch(next);
   });
-//   // THE CODE BELOW IS COPIED FROM NOTEFUL
-// .patch(jsonParser, (req, res, next) => {
-//     const { name } = req.body;
-//     const folderToUpdate = { name }
-
-//     if(!name){
-//         return res.status(400).json({
-//             error: { message: `Request body must contain the folder name`}
-//         })
-//     }
-
-//     FoldersService.updateFolder(
-//         req.app.get('db'),
-//         req.params.folder_id,
-//         folderToUpdate
-//     )
-//         .then(numRowsAffected => {
-//             res.status(204).end()
-//         })
-//         .catch(next)
-// })
 
 module.exports = journalSettingsRouter;

@@ -4,6 +4,7 @@ const xss = require("xss");
 const UsersService = require("./users-service");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const config = require("../config");
 
 const usersRouter = express.Router();
 const jsonParser = express.json();
@@ -65,7 +66,8 @@ usersRouter.route("/login").post((req, res, next) => {
           id: loadedUser.id,
           // eventually move this random string into env variables
         },
-        "alskdjflaskdjalskdfjlksjdflskawivnzp"
+        config.SECRET_TOKEN
+        // "alskdjflaskdjalskdfjlksjdflskawivnzp"
       );
       res.status(200).json({ token, username, id: loadedUser.id });
     })
