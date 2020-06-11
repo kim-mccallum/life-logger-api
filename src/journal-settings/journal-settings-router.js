@@ -32,11 +32,12 @@ journalSettingsRouter
   })
   // .post(auth, (req, res, next) => {
   // CAN YOU HAVE TWO MIDDLEWARES? WE MIGHT NEED BODYPARSER AND AUTH?
-  .post(jsonParser, (req, res, next) => {
-    console.log(req);
-    // destructure body?
+  .post([jsonParser, auth], (req, res, next) => {
+    // .post(jsonParser, (req, res, next) => {
+    console.log(req.body);
+    // use auth to verify the token? THe middleware works like so:
+    // first the jsonParser logic runs, then the auth, then it moves on to run endpoint logic
     const {
-      // GET THE USER_ID FROM MIDDLEWARE?
       user_id,
       target_name,
       units,

@@ -3,6 +3,7 @@ const config = require("../config");
 
 module.exports = (req, res, next) => {
   console.log("were are in auth!");
+  //   get auth key from headers in request
   const authHeader = req.get("Authorization");
   if (!authHeader) {
     throw new Error({ message: "no authorization header" });
@@ -17,7 +18,8 @@ module.exports = (req, res, next) => {
   if (!decodedToken) {
     throw new Error({ message: "not authenticated" });
   }
-  console.log(decodedToken);
+  console.log("here is the token", decodedToken);
   req.user_id = decodedToken.id;
+  //   moves on to the output
   next();
 };
