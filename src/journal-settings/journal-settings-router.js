@@ -7,21 +7,18 @@ const auth = require("../middleware/auth");
 const journalSettingsRouter = express.Router();
 const jsonParser = express.json();
 
-// need help sanitizing
+// need help sanitizing!
 const serializeJournal = (journal) => ({
   user_id: journal.user_id,
   target_value: xss(journal.target_value),
   units: xss(journal.units),
   type: xss(journal.type),
-  description: xss(journal.description),
-  habit_1: xss(journal.habit_1),
-  habit_2: xss(journal.habit_2),
-  habit_3: xss(journal.habit_3),
+  target_description: xss(journal.target_description),
+  habit_name: xss(journal.habit_name),
 });
 
 journalSettingsRouter
   .route("/")
-
   .get((req, res, next) => {
     JournalSettingsService.getAllSettings(req.app.get("db"))
       .then((settings) => {
@@ -30,10 +27,8 @@ journalSettingsRouter
       // if there is an error, pass this
       .catch(next);
   })
-  // .post(auth, (req, res, next) => {
-  // CAN YOU HAVE TWO MIDDLEWARES? WE MIGHT NEED BODYPARSER AND AUTH?
+  // Two middlewares
   .post([jsonParser, auth], (req, res, next) => {
-    // .post(jsonParser, (req, res, next) => {
     console.log(req.body);
     // use auth to verify the token? THe middleware works like so:
     // first the jsonParser logic runs, then the auth, then it moves on to run endpoint logic
@@ -42,10 +37,9 @@ journalSettingsRouter
       target_name,
       units,
       type,
-      description,
-      habit_1,
-      habit_2,
-      habit_3,
+      target_description,
+      habit_name,
+      habit_description,
     } = req.body;
 
     // validate - all required fields included?
@@ -54,8 +48,7 @@ journalSettingsRouter
       "target_name",
       "units",
       "type",
-      "description",
-      "habit_1",
+      "habit_name",
     ]) {
       if (!req.body[field]) {
         return res.status(400).send({
@@ -64,6 +57,7 @@ journalSettingsRouter
       }
     }
     // are fields the correct type? - ADD THIS LATER
+    // MAKE SURE TO ADD SOMETHING TO CHECK IF THE USER ALREADY HAS A JOURNAL SET UP. IF THEY DO, UPDATE IT???
 
     // put values into newSetting object
     const newSetting = {
@@ -71,24 +65,24 @@ journalSettingsRouter
       target_name,
       units,
       type,
-      description,
-      habit_1,
-      habit_2,
-      habit_3,
+      target_description,
+      habit_name,
+      habit_description,
     };
+    // Before you call createSetting, call getSettingById, if it returns something, send a message back to update
 
     JournalSettingsService.createSetting(req.app.get("db"), newSetting)
       .then((setting) => {
         res
           .status(201)
           .location(`/journal-settings/${setting.user_id}`)
-          // add the serialize function here to sanitize!?
+          // add the serialize function here to sanitize post!?
           .json(setting);
       })
       .catch(next);
   });
 
-//by id
+//get by user_id parameter
 journalSettingsRouter
   .route(`/:user_id`)
   .all((req, res, next) => {
@@ -99,21 +93,23 @@ journalSettingsRouter
             error: { message: `user doesn't exist` },
           });
         }
-        res.user = user; //Save the user for the next?
+        console.log("Here should be the user id", res.user);
+        res.user = user; //Save the user for the next???
         next();
       })
       .catch();
   })
   .get((req, res, next) => {
     res.json({
+      // include the journal id in the response
+      journal_id: res.user.id,
       user_id: res.user.user_id,
       target_name: xss(res.user.target_name), //sanitize
       units: xss(res.user.units), //sanitize
       type: xss(res.user.type), //sanitize
-      description: xss(res.user.description), //sanitize
-      habit_1: xss(res.user.habit_1), //sanitize
-      habit_2: xss(res.user.habit_2), //sanitize
-      habit_3: xss(res.user.habit_3), //sanitize
+      target_description: xss(res.user.target_description), //sanitize
+      habit_name: xss(res.user.habit_name), //sanitize
+      habit_description: xss(res.user.habit_description), //sanitize
     });
   })
   // develop this later and PATCH too

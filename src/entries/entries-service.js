@@ -22,6 +22,16 @@ const EntriesService = {
       )
       .select("*")
       .where("entries.user_id", userId);
+    // .first();
+  },
+  createEntry(knex, newEntry) {
+    return knex
+      .insert(newEntry)
+      .into("entries")
+      .returning("*")
+      .then((rows) => {
+        return rows[0];
+      });
   },
 };
 

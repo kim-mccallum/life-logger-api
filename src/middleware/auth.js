@@ -1,6 +1,9 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config");
 
+// refactor for 'industrial strength' get the user id stored inside token
+// then insert the user id into the request so that you have user.id
+// DON'T HAVE THE USER_ID ON THE CLIENT SIDE
 module.exports = (req, res, next) => {
   console.log("were are in auth!");
   //   get auth key from headers in request
