@@ -1,75 +1,46 @@
-const path = require("path");
 const express = require("express");
-const xss = require("xss");
+const path = require("path");
 const UsersService = require("./users-service");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const config = require("../config");
 
 const usersRouter = express.Router();
-const jsonParser = express.json();
+const jsonBodyParser = express.json();
 
-const serializeUser = (user) => ({
-  id: user.id,
-  username: xss(user.username),
-  email: xss(user.email),
-});
+usersRouter.post("/", jsonBodyParser, (req, res, next) => {
+  const { password, username, email } = req.body;
 
-// JUST HAVE CRUD OPS
-usersRouter.route("/").get((req, res, next) => {
-  UsersService.getAllUsers(req.app.get("db"))
-    .then((users) => {
-      res.json(users.map(serializeUser));
-    })
-    .catch(next);
-});
+  for (const field of ["email", "username", "password"])
+    if (!req.body[field])
+      return res.status(400).json({
+        error: `Missing '${field}' in request body`,
+      });
 
-// CREATE THE STUBS FOR THESE ENDPOINTS - SIGN UP IS JUST POST ON /
-usersRouter.route("/sign-up").post((req, res, next) => {
-  // NOT DONE!!
-  // console.log(req.body);
-  let { password, username, email } = req.body;
-  bcrypt.hash(password, 12).then((hashedPW) => {
-    // console.log(hashedPW);
-    const newCred = { username, email, password: hashedPW };
-    UsersService.createUser(req.app.get("db"), newCred)
-      .then((user) => {
-        res.status(201).json(serializeUser(user));
-      })
-      .catch(next);
-  });
-});
+  // TODO: check username doesn't start with spaces
 
-// FINISH THESE LATER
-usersRouter.route("/login").post((req, res, next) => {
-  let { username, password } = req.body;
-  let pwd = password;
-  let loadedUser;
-  UsersService.userLogin(req.app.get("db"), username)
-    .then((user) => {
-      console.log(user);
-      let { username, password, id } = user[0];
-      console.log(password, pwd);
-      loadedUser = { username, id };
-      // compare the request pw to db pw - this is a promise
-      // compare user to stored - order matters
-      return bcrypt.compare(pwd, password);
-    })
-    .then((isValid) => {
-      if (!isValid) {
-        throw new Error("password is not valid");
-      }
-      // build the token
-      const token = jwt.sign(
-        {
-          username: loadedUser.username,
-          id: loadedUser.id,
-          // eventually move this random string into env variables
-        },
-        config.SECRET_TOKEN
-        // "alskdjflaskdjalskdfjlksjdflskawivnzp"
-      );
-      res.status(200).json({ token, username, id: loadedUser.id });
+  const passwordError = UsersService.validatePassword(password);
+
+  if (passwordError) return res.status(400).json({ error: passwordError });
+
+  UsersService.hasUserWithUserName(req.app.get("db"), username)
+    .then((hasUserWithUserName) => {
+      if (hasUserWithUserName)
+        return res.status(400).json({ error: `Username already taken` });
+
+      return UsersService.hashPassword(password).then((hashedPassword) => {
+        const newUser = {
+          username,
+          password: hashedPassword,
+          email,
+        };
+
+        return UsersService.insertUser(req.app.get("db"), newUser).then(
+          (user) => {
+            res
+              .status(201)
+              .location(path.posix.join(req.originalUrl, `/${user.id}`))
+              .json(UsersService.serializeUser(user));
+          }
+        );
+      });
     })
     .catch(next);
 });

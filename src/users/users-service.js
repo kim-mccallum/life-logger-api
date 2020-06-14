@@ -1,29 +1,47 @@
+const bcrypt = require("bcryptjs");
+const xss = require("xss");
+
+const REGEX_UPPER_LOWER_NUMBER_SPECIAL = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&])[\S]+/;
+
 const UsersService = {
-  getAllUsers(knex) {
-    return knex.select("*").from("users");
+  hasUserWithUserName(db, username) {
+    return db("users")
+      .where({ username })
+      .first()
+      .then((user) => !!user);
   },
-  createUser(knex, newUser) {
-    return knex
+  insertUser(db, newUser) {
+    return db
       .insert(newUser)
       .into("users")
       .returning("*")
-      .then((rows) => {
-        return rows[0];
-      });
+      .then(([user]) => user);
   },
-  // PUT THIS IN THE AUTH READ THE JWT AUTH STUFF BACKWARDS
-  userLogin(knex, username) {
-    return knex.select("*").from("users").where("username", username);
+  validatePassword(password) {
+    if (password.length < 6) {
+      return "Password be longer than 6 characters";
+    }
+    // //TURN THESE BACK ON LATER BUT THEY ARE ANNOYING DURING DEVELOPMENT
+    // if (password.length > 72) {
+    //   return "Password be less than 72 characters";
+    // }
+    // if (password.startsWith(" ") || password.endsWith(" ")) {
+    //   return "Password must not start or end with empty spaces";
+    // }
+    // if (!REGEX_UPPER_LOWER_NUMBER_SPECIAL.test(password)) {
+    //   return "Password must contain one upper case, lower case, number and special character";
+    // }
+    return null;
   },
-  // Maybe need these too - version 2 for admins
-  getById(knex, id) {
-    return knex.from("users").select("*").where("id", id).first();
+  hashPassword(password) {
+    return bcrypt.hash(password, 12);
   },
-  deleteUser(knex, id) {
-    return knex("users").where({ id }).delete();
-  },
-  updateUser(knex, id, newUserFields) {
-    return knex("users").where({ id }).update(newUserFields);
+  serializeUser(user) {
+    return {
+      id: user.id,
+      username: xss(user.username),
+      email: xss(user.email),
+    };
   },
 };
 

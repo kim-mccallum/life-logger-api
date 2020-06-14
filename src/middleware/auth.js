@@ -14,7 +14,7 @@ module.exports = (req, res, next) => {
   const token = authHeader.split(" ")[1];
   let decodedToken;
   try {
-    decodedToken = jwt.verify(token, config.SECRET_TOKEN);
+    decodedToken = jwt.verify(token, config.JWT_SECRET);
   } catch {
     throw new Error({ message: "token not verified" });
   }

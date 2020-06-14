@@ -2,7 +2,8 @@ const path = require("path");
 const express = require("express");
 const xss = require("xss");
 const JournalSettingsService = require("./journal-settings-service");
-const auth = require("../middleware/auth");
+// const auth = require("../middleware/auth");
+const { requireAuth } = require("../middleware/jwt-auth");
 
 const journalSettingsRouter = express.Router();
 const jsonParser = express.json();
@@ -28,8 +29,9 @@ journalSettingsRouter
       .catch(next);
   })
   // Two middlewares
-  .post([jsonParser, auth], (req, res, next) => {
+  .post([jsonParser, requireAuth], (req, res, next) => {
     console.log(req.body);
+    console.log("found user id: ", req.user.id);
     // use auth to verify the token? THe middleware works like so:
     // first the jsonParser logic runs, then the auth, then it moves on to run endpoint logic
     const {
