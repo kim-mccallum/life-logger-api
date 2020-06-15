@@ -42,6 +42,7 @@ authRouter.post("/login", jsonBodyParser, (req, res, next) => {
     .catch(next);
 });
 
+// What is this?
 authRouter.post("/refresh", requireAuth, (req, res) => {
   const sub = req.user.username;
   const payload = { user_id: req.user.id };

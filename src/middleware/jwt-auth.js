@@ -8,17 +8,28 @@ function requireAuth(req, res, next) {
   if (!authToken.toLowerCase().startsWith("bearer ")) {
     return res.status(401).json({ error: "Missing bearer token" });
   } else {
+    //   second parameter isn't requires
     bearerToken = authToken.slice(7, authToken.length);
   }
 
+  //   try {
+  //     const payload = AuthService.verifyJwt(bearerToken);
+  //   } catch (error) {
+  //     console.log("we have an error on verifyJwt");
+  //   }
+
   try {
+    console.log("try to verify and do the rest...");
+
     const payload = AuthService.verifyJwt(bearerToken);
 
     AuthService.getUserWithUserName(req.app.get("db"), payload.sub)
       .then((user) => {
-        if (!user) console.log("dont have user");
-        return res.status(401).json({ error: "Unauthorized request" });
-
+        if (!user) {
+          console.log("dont have user");
+          return res.status(401).json({ error: "Unauthorized request" });
+        }
+        console.log("verified JWT and found user:", user);
         req.user = user;
         next();
       })

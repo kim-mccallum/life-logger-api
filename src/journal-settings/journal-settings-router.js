@@ -8,34 +8,31 @@ const { requireAuth } = require("../middleware/jwt-auth");
 const journalSettingsRouter = express.Router();
 const jsonParser = express.json();
 
-// need help sanitizing!
 const serializeJournal = (journal) => ({
   user_id: journal.user_id,
-  target_value: xss(journal.target_value),
+  target_name: xss(journal.target_name),
   units: xss(journal.units),
   type: xss(journal.type),
   target_description: xss(journal.target_description),
   habit_name: xss(journal.habit_name),
+  habit_description: xss(journal.habit_description),
 });
 
 journalSettingsRouter
   .route("/")
-  .get((req, res, next) => {
-    JournalSettingsService.getAllSettings(req.app.get("db"))
+  // change this or remove this route so that users can't get everyone else's journal data
+  // Maybe create an admin account setting with this priveledge'
+  .get(requireAuth, (req, res, next) => {
+    JournalSettingsService.getByUserId(req.app.get("db"), req.user.id)
       .then((settings) => {
         res.json(settings);
       })
-      // if there is an error, pass this
       .catch(next);
   })
-  // Two middlewares
   .post([jsonParser, requireAuth], (req, res, next) => {
     console.log(req.body);
     console.log("found user id: ", req.user.id);
-    // use auth to verify the token? THe middleware works like so:
-    // first the jsonParser logic runs, then the auth, then it moves on to run endpoint logic
     const {
-      user_id,
       target_name,
       units,
       type,
@@ -45,13 +42,7 @@ journalSettingsRouter
     } = req.body;
 
     // validate - all required fields included?
-    for (const field of [
-      "user_id",
-      "target_name",
-      "units",
-      "type",
-      "habit_name",
-    ]) {
+    for (const field of ["target_name", "units", "type", "habit_name"]) {
       if (!req.body[field]) {
         return res.status(400).send({
           error: { message: `'${field}' is required.` },
@@ -62,8 +53,8 @@ journalSettingsRouter
     // MAKE SURE TO ADD SOMETHING TO CHECK IF THE USER ALREADY HAS A JOURNAL SET UP. IF THEY DO, UPDATE IT???
 
     // put values into newSetting object
-    const newSetting = {
-      user_id,
+    let newSetting = {
+      user_id: req.user.id,
       target_name,
       units,
       type,
@@ -71,6 +62,9 @@ journalSettingsRouter
       habit_name,
       habit_description,
     };
+
+    newSetting = serializeJournal(newSetting);
+
     // Before you call createSetting, call getSettingById, if it returns something, send a message back to update
 
     JournalSettingsService.createSetting(req.app.get("db"), newSetting)
@@ -84,10 +78,17 @@ journalSettingsRouter
       .catch(next);
   });
 
-//get by user_id parameter
+//get by user_id parameter - THIS MIGHT BE DELETED
 journalSettingsRouter
   .route(`/:user_id`)
-  .all((req, res, next) => {
+  .all(requireAuth, (req, res, next) => {
+    if (req.params.user_id !== req.user.id) {
+      return res.status(401).json({
+        error: {
+          message: `Unauthorized. Users can only access their own account data.`,
+        },
+      });
+    }
     JournalSettingsService.getByUserId(req.app.get("db"), req.params.user_id)
       .then((user) => {
         if (!user) {
@@ -95,7 +96,7 @@ journalSettingsRouter
             error: { message: `user doesn't exist` },
           });
         }
-        console.log("Here should be the user id", res.user);
+
         res.user = user; //Save the user for the next???
         next();
       })
