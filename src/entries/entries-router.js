@@ -12,19 +12,20 @@ const jsonParser = express.json();
 const serializeEntry = (entry) => ({
   user_id: entry.user_id,
   journal_id: xss(entry.journal_id),
+  date: xss(entry.date),
   target_value: xss(entry.target_value),
   habit_value: xss(entry.habit_value),
 });
 
 entriesRouter
   .route("/")
-  // change this or remove this route so that users can't get everyone else's journal data
   // Maybe create an admin account setting with this priveledge'
   .get(requireAuth, (req, res, next) => {
-    EntriesService.getAllEntries(req.app.get("db"))
+    EntriesService.getByUserId(req.app.get("db"), req.user.id)
       .then((entries) => {
-        res.status(200).json(entries);
+        res.json(entries);
       })
+      // should this be next or something else?
       .catch(next);
   })
   // handle duplicate potential on the front end
@@ -47,7 +48,7 @@ entriesRouter
       user_id: req.user.id,
       journal_id,
       // // add optional date either get it from request or set default now()
-      // date,
+      date,
       target_value,
       habit_value,
     };
@@ -65,6 +66,7 @@ entriesRouter
       .catch(next);
   });
 
+// not using this route
 entriesRouter
   .route(`/:user_id`)
   .all(requireAuth, (req, res, next) => {

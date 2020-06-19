@@ -11,16 +11,7 @@ function requireAuth(req, res, next) {
     //   second parameter isn't requires
     bearerToken = authToken.slice(7, authToken.length);
   }
-
-  //   try {
-  //     const payload = AuthService.verifyJwt(bearerToken);
-  //   } catch (error) {
-  //     console.log("we have an error on verifyJwt");
-  //   }
-
   try {
-    console.log("try to verify and do the rest...");
-
     const payload = AuthService.verifyJwt(bearerToken);
 
     AuthService.getUserWithUserName(req.app.get("db"), payload.sub)

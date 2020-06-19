@@ -36,13 +36,14 @@ authRouter.post("/login", jsonBodyParser, (req, res, next) => {
         const payload = { user_id: dbUser.id };
         res.send({
           authToken: AuthService.createJwt(sub, payload),
+          username: dbUser.username,
         });
       });
     })
     .catch(next);
 });
 
-// What is this?
+// What is this? I AM NOT USING THIS CURRENTLY
 authRouter.post("/refresh", requireAuth, (req, res) => {
   const sub = req.user.username;
   const payload = { user_id: req.user.id };
